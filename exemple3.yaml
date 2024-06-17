@@ -1,0 +1,37 @@
+openapi: 3.0.0
+info:
+  title: Exemple d'API
+  description: Une simple API pour démontrer OpenAPI.
+  version: 1.0.0
+paths:
+  /utilisateurs:
+    get:
+      summary: Liste des utilisateurs
+      parameters:
+        - name: age
+          in: query
+          required: false
+          schema:
+            type: integer
+            example: 30
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 1
+                    nom:
+                      type: string
+                      example: Dupont
+                    age:
+                      type: integer
+                      example: 30
+        '400':
+          description: Requête invalide
