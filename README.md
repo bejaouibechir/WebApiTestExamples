@@ -30,7 +30,7 @@ OpenAPI est une spécification standard pour définir des API RESTful. Elle perm
  - ** Ajouter des endpoints à l'API. **
  - ** Décrire les méthodes HTTP et les réponses. **
 
-[exemple 2](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-open-api/exemple2.yaml))
+[exemple 2](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-open-api/exemple2.yaml)
 
 ## Démonstration dans Swagger Editor:
 
