@@ -15,7 +15,7 @@ OpenAPI est une spécification standard pour définir des API RESTful. Elle perm
 
 ## Exemple de structure de base:
 
-[exemple 1](URL)
+[exemple 1](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-open-api/exemple1.yaml)
 
 ** Démonstration dans Swagger Editor: **
 
@@ -30,7 +30,7 @@ OpenAPI est une spécification standard pour définir des API RESTful. Elle perm
  - ** Ajouter des endpoints à l'API. **
  - ** Décrire les méthodes HTTP et les réponses. **
 
-[exemple 2](URL)
+[exemple 2](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-open-api/exemple2.yaml))
 
 ## Démonstration dans Swagger Editor:
 
@@ -43,7 +43,7 @@ OpenAPI est une spécification standard pour définir des API RESTful. Elle perm
  - Ajouter des paramètres de requête.
  - Décrire les réponses possibles.
 
-[exemple 3](URL)   
+[exemple 3](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-open-api/exemple3.yaml))   
 
 
 ## Démonstration dans Swagger Editor:
@@ -58,7 +58,7 @@ OpenAPI est une spécification standard pour définir des API RESTful. Elle perm
  - Utiliser des composants pour éviter la redondance.
  - Décrire les schémas réutilisables.
    
-[exemple 4](URL)   
+[exemple 4](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-open-api/exemple4.yaml)   
 
 ### Démonstration dans Swagger Editor:
 
@@ -72,7 +72,7 @@ OpenAPI est une spécification standard pour définir des API RESTful. Elle perm
 - Finaliser et valider la spécification.
 - Exemple de documentation:
   
- [exemple 5](URL)   
+ [exemple 5](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-open-api/exemple5.yaml)   
   Démonstration dans Swagger Editor:
 
 ** Ajouter des Descriptions: **
