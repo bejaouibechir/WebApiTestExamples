@@ -1,7 +1,7 @@
 # Importer la Collection dans Postman
 
 - ***Ouvrir Postman.***
-- ***Cliquer sur "Import"*** dans le coin supérieur gauche (définition collection)[].
+- ***Cliquer sur "Import"*** dans le coin supérieur gauche [définition collection](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-jtest-post-response/JsonPlaceHolder%20tasks.postman_collection.json).
 - ***Sélectionner "Raw Text"*** et coller le JSON fourni.
 - ***Cliquer sur "Continue"***, puis sur "Import".
 
@@ -12,7 +12,7 @@ Dans l'onglet ***"Scripts"*** de cette requête, ajoutez le script suivant dans 
 
 ### 1. Get task by id=1
 
-![Zone Scripts]()
+![Zone Scripts](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-jtest-post-response/3.png)
 
 ```javascript
 // Test pour vérifier que le code de statut est 200
