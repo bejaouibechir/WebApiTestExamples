@@ -29,6 +29,8 @@ Vérifiez que Newman utilise correctement l'adresse de base pour accéder à vot
 
 Analysez les résultats des tests Newman pour détecter et résoudre les éventuelles erreurs.
 
+![Pipeline en cour d'execution](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-newman-inaction/images/2.png)
+
 
 
 
