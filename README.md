@@ -196,22 +196,6 @@ using Microsoft.AspNetCore.Authorization;
 - Executez la commande ***ngrok http https://localhost:port***
 - Recuperez le lien qui expose le service en public
 
-## Tester le service
-Choissiez le mode d'authentification Basic et entrez les paramètres d'accès et tester la requête
-
-Changer le login ou le mot de passe et re testez
-
-Dans la zone Headers de la requête essayez de cliquer sur l'oeuil pour voir en clair l'entête **Authorization**
-
-Copiez le code de l'entête et décodez le au niveau de l'un des sites qui décodent les chaines à base64 
-
-
-
-
-
-
-
-
 
 # Authentification Basic
 
@@ -240,3 +224,9 @@ Copiez le code de l'entête et décodez le au niveau de l'un des sites qui déco
 **Observer la réponse :** Postman affichera la réponse du serveur dans la fenêtre inférieure de l'interface. Assurez-vous de vérifier que la réponse correspond à ce que vous attendiez.
 
 **Gérer les erreurs :** Si la requête échoue, vérifiez les détails de l'erreur dans la fenêtre de réponse de Postman et ajustez les paramètres si nécessaire.
+
+-  Changer le login ou le mot de passe et re testez
+
+- Dans la zone Headers de la requête essayez de cliquer sur l'oeuil pour voir en clair l'entête **Authorization**
+
+-  Copiez le code de l'entête et décodez le au niveau de l'un des sites qui décodent les chaines à base64 exemple [base64decode](https://www.base64decode.org/)
