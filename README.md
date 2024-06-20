@@ -193,40 +193,49 @@ using Microsoft.AspNetCore.Authorization;
 - Créez un compte s'il vous n'avez pas de compte 
 - Ouvrez une session  ngrok 
 - Recuperez votre token de session et executez la commande suivante une fois authentifié ***ngrok config add-authtoken <clé de token>***
+  ![authentification](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-basic-digest/1.png)
 - Executez la commande ***ngrok http https://localhost:port***
 - Recuperez le lien qui expose le service en public
-
-
-# Authentification Basic
-
-**Nouvelle requête :** Créez une nouvelle requête en cliquant sur le bouton "Nouvelle requête" en haut à gauche de l'interface de Postman.
-**Définir la méthode HTTP :** Choisissez la méthode HTTP que vous souhaitez tester (GET, POST, etc.) dans le menu déroulant à côté de l'URL.
-**Entrer l'URL :** Entrez l'URL du service ou de l'API que vous souhaitez tester dans le champ d'URL.
+  ![Le lien d'exposition du service en public](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-basic-digest/2.png)
 
 
 ## Configurer l'authentification Basic
 
+**Nouvelle requête :** Créez une nouvelle requête en cliquant sur le bouton "Nouvelle requête" en haut à gauche de l'interface de Postman.
+![La reuqête](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-basic-digest/3.png)
 **Ouvrir les paramètres d'authentification :** Cliquez sur l'onglet "Authorization" situé sous la barre d'URL dans l'interface de Postman.
 
 **Sélectionner le type d'authentification :** Dans le menu déroulant "Type", sélectionnez "Basic Auth".
 
+**Définir la méthode HTTP :** Choisissez la méthode HTTP que vous souhaitez tester (GET, POST, etc.) dans le menu déroulant à côté de l'URL.
+**Entrer l'URL :** Entrez l'URL du service ou de l'API que vous souhaitez tester dans le champ d'URL.
+
 **Entrer les informations d'identification :** Remplissez les champs "Nom d'utilisateur" et "Mot de passe" avec les informations d'authentification requises par le service que vous testez, par exemple 
 *user1* et *password1*.
+![Les paramètres](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-basic-digest/4.png)
 
 ## Envoyer la requête:
 
 **Vérifier les paramètres :** Assurez-vous que tous les paramètres de votre requête sont corrects, y compris l'URL, la méthode HTTP et les paramètres d'authentification.
+
 
 **Envoyer la requête :** Cliquez sur le bouton "Send" (Envoyer) pour envoyer la requête à l'URL spécifiée avec les informations d'authentification Basic.
 
 ## Vérifier la réponse
 
 **Observer la réponse :** Postman affichera la réponse du serveur dans la fenêtre inférieure de l'interface. Assurez-vous de vérifier que la réponse correspond à ce que vous attendiez.
+![Vérification de la requête](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-basic-digest/5.png)
 
 **Gérer les erreurs :** Si la requête échoue, vérifiez les détails de l'erreur dans la fenêtre de réponse de Postman et ajustez les paramètres si nécessaire.
 
 -  Changer le login ou le mot de passe et re testez
+  ![Test avec des paramètres erronés](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-basic-digest/6.png)
 
 - Dans la zone Headers de la requête essayez de cliquer sur l'oeuil pour voir en clair l'entête **Authorization**
-
+  ![Voir en clair la valeur encodée des paramètres d'accès](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-basic-digest/7.png)
+  
+   ![Voir en clair la valeur encodée des paramètres d'accès](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-basic-digest/8.png)
 -  Copiez le code de l'entête et décodez le au niveau de l'un des sites qui décodent les chaines à base64 exemple [base64decode](https://www.base64decode.org/)
+  ![Voir en clair la valeur des paramètres d'accès](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-basic-digest/9.png)
+
+
