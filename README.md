@@ -140,4 +140,8 @@ namespace WebApiKey.Controllers
 
 ## Le test avec Postman 
 
+Faites le test avec Postman
+
+![L'interface Postman](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibaechir_api_key/1.png)
+
 
