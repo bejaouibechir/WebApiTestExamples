@@ -1,241 +1,235 @@
-# Préparation du service 
-Nous sommes supposé utiliser une application Web API net core 8.0
+# Test du mode d'authentification Digest
 
-## Créer un nouveau projet Web API
-
-**Ouvrir Visual Studio :** Lancez Visual Studio et créez un nouveau projet.
-
-**Sélectionner le modèle :** Choisissez le modèle "ASP.NET Core Web Application".
-
-**Configurer le projet :** Donnez un nom à votre projet, sélectionnez la version la plus récente de .NET Core (par exemple, .NET 8.0), et choisissez le modèle "API" dans les options de projet.
-
-Copiez ce contenu dans le fichier **.csproj** du projet et compilez le
-
-``` xml
-<Project Sdk="Microsoft.NET.Sdk.Web">
-
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
-  </ItemGroup>
-
-</Project>
-
-```
-Cela ajoutera une référence à une dépendance nécessaire *Microsoft.AspNetCore.Authentication*
-
-Ajouter une nouvelle classe au projet 
-
-``` CSharp
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using System.Net.Http.Headers;
-using System.Security.Claims;
-using System.Text;
-using System.Text.Encodings.Web;
-
-public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
-{
-    private readonly IUserService _userService;
-
-    public BasicAuthenticationHandler(
-        IOptionsMonitor<AuthenticationSchemeOptions> options,
-        ILoggerFactory logger,
-        UrlEncoder encoder,
-        ISystemClock clock,
-        IUserService userService)
-        : base(options, logger, encoder, clock)
-    {
-        _userService = userService;
-    }
-
-    protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
-    {
-        if (!Request.Headers.ContainsKey("Authorization"))
-            return AuthenticateResult.Fail("Missing Authorization Header");
-
-        bool isAuthenticated = false;
-        string username = string.Empty;
-        try
-        {
-            var authHeader = AuthenticationHeaderValue.Parse(Request.Headers["Authorization"]);
-            var credentialBytes = Convert.FromBase64String(authHeader.Parameter);
-            var credentials = Encoding.UTF8.GetString(credentialBytes).Split(':');
-            username = credentials[0];
-            var password = credentials[1];
-            isAuthenticated = await _userService.ValidateCredentialsAsync(username, password);
-        }
-        catch
-        {
-            return AuthenticateResult.Fail("Invalid Authorization Header");
-        }
-
-        if (!isAuthenticated)
-            return AuthenticateResult.Fail("Invalid Username or Password");
-
-        var claims = new[] { new Claim(ClaimTypes.Name, username) };
-        var identity = new ClaimsIdentity(claims, Scheme.Name);
-        var principal = new ClaimsPrincipal(identity);
-        var ticket = new AuthenticationTicket(principal, Scheme.Name);
-
-        return AuthenticateResult.Success(ticket);
-    }
-}
-
-```
-
-Nous aurons besoin également à un service dont la définition est la suivante
-
-***IUserService:***
-
-``` CSharp 
-
-public interface IUserService
-{
-    Task<bool> ValidateCredentialsAsync(string username, string password);
-}
-
-```
-
-***UserService:***
-
-``` CSharp 
-  public class UserService : IUserService
-  {
-      private readonly Dictionary<string, string> _users = new()
-  {
-      { "user1", "password1" },
-      { "user2", "password2" }
-  };
+**Authentification Digest :**
+- L’authentification Digest est un mécanisme utilisé pour sécuriser les communications sur Internet.
   
-      public Task<bool> ValidateCredentialsAsync(string username, string password)
-      {
-          return Task.FromResult(_users.Any(u => u.Key == username && u.Value == password));
-      }
-  }
+- Contrairement à l’authentification de base, où le nom d’utilisateur et le mot de passe sont envoyés en texte clair, l’authentification Digest demande au client d’envoyer un hachage de ses informations sur le canal de communication. Ainsi, le nom d’utilisateur et le mot de passe du client ne sont jamais transmis en clair sur le réseau1.
+  
+- L’authentification Digest fonctionne bien sur Internet, ce qui la rend plus appropriée que l’authentification Windows1.
+
+## Création du serveur web api 
+
+- Ouvrez Visual Studio ou votre éditeur de code préféré.
+
+- Créez un nouveau projet ASP.NET Core Web API en sélectionnant le modèle approprié.
+
+Ajouter la classe ***User*** 
+
+```CSharp 
+public class 
+{
+    public string Username { get; set; }
+    public string Password { get; set; }
+}
 
 ```
-La classe program.cs doit rassembler à ce code: 
-
-```CSharp
-using Microsoft.AspNetCore.Authentication;
-
-namespace WebAuth
+Et puis la classe ***DigestAuthenticationMiddleware***
+Cette classe intercepte les requêtes pour vérifier les utilisateurs est ce qu'il font partie des utilisateurs authentifiés ou pas
+```CSharp 
+public class DigestAuthenticationMiddleware
 {
-    public class Program
+    private readonly RequestDelegate _next;
+    private readonly IList<User> _users;
+    private readonly ILogger<DigestAuthenticationMiddleware> _logger;
+    private const string Realm = "MyRealm";
+
+    public DigestAuthenticationMiddleware(RequestDelegate next, IOptions<List<User>> users, ILogger<DigestAuthenticationMiddleware> logger)
     {
-        public static void Main(string[] args)
+        _next = next;
+        _users = users.Value;
+        _logger = logger;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        if (!context.Request.Headers.ContainsKey("Authorization"))
         {
-            var builder = WebApplication.CreateBuilder(args);
+            await Challenge(context);
+            return;
+        }
 
-            // Add services to the container.
-            builder.Services.AddControllers();
+        var authHeader = context.Request.Headers["Authorization"].ToString();
+        _logger.LogInformation("Authorization Header: {authHeader}", authHeader);
 
-
-            builder.Services.AddAuthentication("BasicAuthentication")
-                .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
-
-            builder.Services.AddAuthorization(options =>
+        if (authHeader.StartsWith("Digest ", StringComparison.OrdinalIgnoreCase))
+        {
+            var digestValues = ParseDigestHeader(authHeader);
+            if (digestValues != null && IsValidDigest(digestValues, context))
             {
-                options.AddPolicy("BasicAuth", policy =>
-                {
-                    policy.RequireAuthenticatedUser();
-                    policy.AddAuthenticationSchemes("BasicAuthentication");
-                });
-            });
+                _logger.LogInformation("Digest is valid.");
+                await _next(context);
+                return;
+            }
+        }
 
-            builder.Services.AddSingleton<IUserService, UserService>();
-            var app = builder.Build();
+        _logger.LogWarning("Unauthorized request.");
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        await Challenge(context);
+    }
 
-            // Configure the HTTP request pipeline.
-            app.UseHttpsRedirection();
+    private async Task Challenge(HttpContext context)
+    {
+        var nonce = GenerateNonce();
+        _logger.LogInformation("Generated nonce: {nonce}", nonce);
 
-            app.UseAuthentication();
-            app.UseAuthorization();
+        context.Response.Headers["WWW-Authenticate"] = $"Digest realm=\"{Realm}\", nonce=\"{nonce}\", qop=\"auth\"";
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        await context.Response.WriteAsync("Unauthorized");
+    }
 
-            app.MapControllers();
+    private string GenerateNonce()
+    {
+        var nonceBytes = new byte[16];
+        using (var rng = RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(nonceBytes);
+        }
+        return Convert.ToBase64String(nonceBytes);
+    }
 
-            app.Run();
+    private IDictionary<string, string> ParseDigestHeader(string authHeader)
+    {
+        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var pairs = authHeader.Substring(7).Split(',');
+
+        foreach (var pair in pairs)
+        {
+            var keyValue = pair.Split(new[] { '=' }, 2);
+            if (keyValue.Length == 2)
+            {
+                var key = keyValue[0].Trim(' ', '"');
+                var value = keyValue[1].Trim(' ', '"');
+                values[key] = value;
+            }
+        }
+
+        foreach (var kvp in values)
+        {
+            _logger.LogInformation("Digest Header: {Key} = {Value}", kvp.Key, kvp.Value);
+        }
+
+        return values;
+    }
+
+    private bool IsValidDigest(IDictionary<string, string> digestValues, HttpContext context)
+    {
+        var username = digestValues["username"];
+        var user = _users.FirstOrDefault(u => u.Username == username);
+
+        if (user == null)
+        {
+            _logger.LogWarning("User not found: {username}", username);
+            return false;
+        }
+
+        var realm = digestValues["realm"];
+        var nonce = digestValues["nonce"];
+        var uri = digestValues["uri"];
+        var qop = digestValues["qop"];
+        var nc = digestValues["nc"];
+        var cnonce = digestValues["cnonce"];
+        var response = digestValues["response"];
+        var method = context.Request.Method;
+
+        // HA1 = MD5(username:realm:password)
+        var ha1 = CalculateMD5Hash($"{username}:{realm}:{user.Password}");
+
+        // HA2 = MD5(method:digestURI)
+        var ha2 = CalculateMD5Hash($"{method}:{uri}");
+
+        // response = MD5(HA1:nonce:nc:cnonce:qop:HA2)
+        var validResponse = CalculateMD5Hash($"{ha1}:{nonce}:{nc}:{cnonce}:{qop}:{ha2}");
+
+        _logger.LogInformation("Calculated HA1: {ha1}", ha1);
+        _logger.LogInformation("Calculated HA2: {ha2}", ha2);
+        _logger.LogInformation("Calculated response: {validResponse}", validResponse);
+        _logger.LogInformation("Client response: {response}", response);
+
+        return validResponse.Equals(response, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private string CalculateMD5Hash(string input)
+    {
+        using (var md5 = MD5.Create())
+        {
+            var inputBytes = Encoding.ASCII.GetBytes(input);
+            var hashBytes = md5.ComputeHash(inputBytes);
+            var sb = new StringBuilder();
+            foreach (var b in hashBytes)
+            {
+                sb.Append(b.ToString("x2"));
+            }
+            return sb.ToString();
         }
     }
 }
 
 ```
-Pour le test il faut ajouter le contrôleur **TestController** dans le dossier **Controllers**
+
+- Ajoutez des paramètres d'accès des utilisateurs dans le fichier ***appsettings.json***
+
+``` Json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+    "Users": [
+      {
+        "Username": "user1",
+        "Password": "password1"
+      },
+      {
+        "Username": "user2",
+        "Password": "password2"
+      }
+    ]
+  ,
+  "AllowedHosts": "*"
+}
+
+```
+- Tester le code avec un contrôleur ***TestController***
 
 ``` CSharp
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
+namespace WebAuthDigest2.Controllers
+{
     [Route("api/[controller]")]
     [ApiController]
     public class TestController : ControllerBase
     {
-        [HttpGet]
-        [Authorize(Policy = "BasicAuth")]
         public IActionResult Get()
         {
-            return Ok("You are authenticated");
+            return Ok("You're authenticated");
         }
     }
-
+}
 
 ```
 
-## Exposer le service en public à l'aide de ngrock
+## Test du service dans Postman 
 
-- Créez un compte s'il vous n'avez pas de compte 
-- Ouvrez une session  ngrok 
-- Recuperez votre token de session et executez la commande suivante une fois authentifié ***ngrok config add-authtoken <clé de token>***
-  ![authentification](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-basic-digest/1.png)
-- Executez la commande ***ngrok http https://localhost:port***
-- Recuperez le lien qui expose le service en public
-  ![Le lien d'exposition du service en public](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-basic-digest/2.png)
+Voici les valeurs possibles que vous pouvez spécifier pour chaque champ dans l’authentification Digest de Postman :
 
-
-## Configurer l'authentification Basic
-
-**Nouvelle requête :** Créez une nouvelle requête en cliquant sur le bouton "Nouvelle requête" en haut à gauche de l'interface de Postman.
-![La reuqête](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-basic-digest/3.png)
-**Ouvrir les paramètres d'authentification :** Cliquez sur l'onglet "Authorization" situé sous la barre d'URL dans l'interface de Postman.
-
-**Sélectionner le type d'authentification :** Dans le menu déroulant "Type", sélectionnez "Basic Auth".
-
-**Définir la méthode HTTP :** Choisissez la méthode HTTP que vous souhaitez tester (GET, POST, etc.) dans le menu déroulant à côté de l'URL.
-**Entrer l'URL :** Entrez l'URL du service ou de l'API que vous souhaitez tester dans le champ d'URL.
-
-**Entrer les informations d'identification :** Remplissez les champs "Nom d'utilisateur" et "Mot de passe" avec les informations d'authentification requises par le service que vous testez, par exemple 
-*user1* et *password1*.
-![Les paramètres](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-basic-digest/4.png)
-
-## Envoyer la requête:
-
-**Vérifier les paramètres :** Assurez-vous que tous les paramètres de votre requête sont corrects, y compris l'URL, la méthode HTTP et les paramètres d'authentification.
+- ***Username (Nom d’utilisateur) :*** Vous pouvez entrer le nom d’utilisateur associé à l’authentification.
+- ***Password (Mot de passe) :*** Entrez le mot de passe correspondant au nom d’utilisateur.
+- ***Realm (Royaume) :*** Cela dépend du serveur, mais vous pouvez spécifier une chaîne comme “Mon Royaume” ou “Zone de protection”.
+- ***Nonce (Nombre à usage unique) :*** Le serveur génère une valeur unique pour chaque demande. Vous pouvez simplement laisser ce champ vide, et Postman le gérera automatiquement.
+- ***Algorithm (Algorithme) :*** Vous pouvez spécifier MD5 ou SHA, en fonction des exigences du serveur.
+- ***qop (Qualité de protection) :*** Si le serveur le demande, vous pouvez spécifier “auth” ou “auth-int”.
+- ***Nonce Count (Compteur de nombre à usage unique) :*** Vous pouvez entrer un nombre hexadécimal, par exemple, “00000001”.
+- ***Client Nonce (Nonce du client) :*** Vous pouvez spécifier une chaîne aléatoire, par exemple, “0a4f113b”.
+- ***Opaque :*** Lasser vide.
 
 
-**Envoyer la requête :** Cliquez sur le bouton "Send" (Envoyer) pour envoyer la requête à l'URL spécifiée avec les informations d'authentification Basic.
 
-## Vérifier la réponse
 
-**Observer la réponse :** Postman affichera la réponse du serveur dans la fenêtre inférieure de l'interface. Assurez-vous de vérifier que la réponse correspond à ce que vous attendiez.
-![Vérification de la requête](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-basic-digest/5.png)
-
-**Gérer les erreurs :** Si la requête échoue, vérifiez les détails de l'erreur dans la fenêtre de réponse de Postman et ajustez les paramètres si nécessaire.
-
--  Changer le login ou le mot de passe et re testez
-  ![Test avec des paramètres erronés](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-basic-digest/6.png)
-
-- Dans la zone Headers de la requête essayez de cliquer sur l'oeuil pour voir en clair l'entête **Authorization**
-  ![Voir en clair la valeur encodée des paramètres d'accès](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-basic-digest/7.png)
   
-   ![Voir en clair la valeur encodée des paramètres d'accès](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-basic-digest/8.png)
--  Copiez le code de l'entête et décodez le au niveau de l'un des sites qui décodent les chaines à base64 exemple [base64decode](https://www.base64decode.org/)
-  ![Voir en clair la valeur des paramètres d'accès](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-basic-digest/9.png)
-
+  
+  
 
