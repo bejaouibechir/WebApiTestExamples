@@ -226,6 +226,7 @@ Voici les valeurs possibles que vous pouvez spécifier pour chaque champ dans l�
 - ***Client Nonce (Nonce du client) :*** Vous pouvez spécifier une chaîne aléatoire, par exemple, “0a4f113b”.
 - ***Opaque :*** Lasser vide.
 
+![L'interface postman](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-digest/1.png))
 
 
 
