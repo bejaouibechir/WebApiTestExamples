@@ -1,99 +1,116 @@
-# Middleware ASP.NET Core pour vérifier le header
+# Créer un espace de travail Workspace
 
-Pour démontrer comment une application ASP.NET Core 8.0 peut intercepter une requête pour vérifier l'existence d'un header spécifique (nommé my-header avec la valeur my-header-value), voici un exemple complet qui inclut le middleware ASP.NET Core et un test Postman pour vérification.
+## Création d'un Workspace
 
-Tout d'abord, nous allons créer un middleware personnalisé dans ASP.NET Core qui intercepte chaque requête entrante et vérifie la présence du header requis.
+- Ouvrir Postman : Lancez l'application Postman.
+- Accéder aux Workspaces : Cliquez sur l'icône "Workspaces" en haut à gauche de l'écran.
+- Créer un nouveau Workspace :
+     - Cliquez sur le bouton "Create Workspace".
+     - Remplissez les détails du Workspace :
+       - ***Name :*** Donnez un nom au Workspace, par exemple, ***Demo Workspace***.
+       - ***Summary*** : Ajoutez une brève description.
+       - ***Visibility*** : Sélectionnez le type de Workspace ***(Personal, Team, Public)***.
+  
+### Comprendre les différents types de Workspaces
 
-``` csharp
-// Middleware pour vérifier l'existence du header
-public class HeaderValidationMiddleware
-{
-    private readonly RequestDelegate _next;
+- **Personal Workspace :** Accessible uniquement par vous.
+- **Team Workspace :** Accessible par les membres de votre équipe Postman.
+- **Public Workspace :** Accessible par toute la communauté Postman.
 
-    public HeaderValidationMiddleware(RequestDelegate next)
-    {
-        _next = next;
-    }
+###  Inviter des collaborateurs
 
-    public async Task Invoke(HttpContext context)
-    {
-        // Vérifier si le header requis est présent et a la bonne valeur
-        if (context.Request.Headers.TryGetValue("my-header", out var headerValues))
-        {
-            if (headerValues.Contains("my-header-value"))
-            {
-                // Header et valeur valides, continuer la requête
-                await _next(context);
-                return;
-            }
-        }
+**Accéder au Workspace :** Allez dans le Workspace que vous venez de créer.
 
-        // Header invalide, retourner une réponse 400 Bad Request
-        context.Response.StatusCode = 400;
-        await context.Response.WriteAsync("Header 'my-header' with value 'my-header-value' is required.");
-    }
-}
+**Inviter des collaborateurs :**
 
-// Extension méthode pour ajouter le middleware à la pipeline
-public static class HeaderValidationMiddlewareExtensions
-{
-    public static IApplicationBuilder UseHeaderValidation(this IApplicationBuilder builder)
-    {
-        return builder.UseMiddleware<HeaderValidationMiddleware>();
-    }
-}
+Cliquez sur le bouton **Invite**.
+Entrez les adresses e-mail des personnes que vous souhaitez inviter.
+Choisissez le rôle pour chaque collaborateur **(Admin, Editor, Viewer)**.
 
-```
-## Configuration de l'application ASP.NET Core
+## Gérer les autorisations sous les Workspaces
 
-Dans ***Program.cs***, ajoutez le middleware à la pipeline de requête la zone des middleware ajouter
-``` csharp
- app.UseHeaderValidation();
-```
+**Comprendre les rôles :**
 
+- Admin : Peut gérer le Workspace, les collections, et les membres.
+- Editor : Peut modifier les collections et les environnements.
+- Viewer : Peut uniquement voir les collections et les environnements.
 
- ## Exemple de test avec Postman
+**Attribuer des rôles :**
 
- Utilisez Postman pour envoyer une requête avec le header requis pour vérifier que le middleware fonctionne correctement.
+- Dans l'onglet **Manage Roles**, vous pouvez attribuer ou modifier les rôles des membres du Workspace.
+- Cliquez sur le nom du membre, puis sélectionnez le rôle approprié.
 
-- URL: URL de votre application ASP.NET Core locale ou déployée.
-- Méthode: POST, GET, ou toute autre méthode que votre middleware doit intercepter.
-- Headers:
-      - Key: my-header
-      - Value: my-header-value
+## Découvrir les niveaux de visibilité basés sur les permissions
 
-  Assurez-vous que la requête envoyée depuis Postman contient ce header avec la bonne valeur. Le middleware devrait laisser passer la requête si le header est correctement défini.
+**Niveaux de visibilité :**
 
-## Script de pré-requête dans Postman
+- Les **Admins** peuvent voir et modifier tous les aspects du Workspace.
+- Les **Editors** peuvent voir et modifier les collections et les environnements, mais ne peuvent pas gérer les membres du Workspace.
+- Les **Viewers** ne peuvent que consulter les collections et les environnements sans les modifier.
 
-Ajoutez le script de pré-requête suivant dans votre requête Postman :
+# Démonstration pratique
+# TP : Gestion des Workspaces dans Postman
 
-```javascript 
-// Vérifier la présence et la valeur du header 'my-header'
-const headerValue = pm.request.headers.get('my-header');
+Pour rendre cette démonstration interactive, vous pouvez suivre ces étapes 
 
-if (!headerValue) {
-    console.log("Header 'my-header' est nécessaire dans la requête.");
-    throw new Error("Header 'my-header' est manquant.");
-} else if (headerValue !== 'my-header-value') {
-    console.log("Header 'my-header' doit avoir la valeur 'my-header-value'.");
-    throw new Error("Header 'my-header' a une valeur incorrecte.");
-} else {
-    console.log("Header 'my-header' est présent avec la bonne valeur.");
-}
+## Objectifs
+- Créer et configurer un Workspace dans Postman.
+- Inviter un collaborateur à rejoindre le Workspace.
+- Comprendre et gérer les autorisations des membres du Workspace.
+- Explorer les niveaux de visibilité et de permissions.
 
-```
-![Définition des prèscript dans postman](https://github.com/bejaouibechir/WebApiTestExamples/blob/bejaouibechir-header/1.png)
+## Pré-requis
+- Deux comptes Postman avec les emails suivants :
+    - admin@xyz.com (Administrateur)
+    - guest@xyz.com (Collaborateur invité)
 
+## Étapes du TP
 
-### Ajouter le header dans la requête Postman
+### Création du Workspace par l'administrateur
 
-Assurez-vous que votre requête Postman contient le header my-header avec la valeur my-header-value
+### Connexion à Postman :
+- Connectez-vous à Postman avec le compte **admin@xyz.com**
 
-- Key: my-header
-- Value: my-header-value
+### Création d'un nouveau Workspace :
+- Cliquez sur l'icône "Workspaces" en haut à gauche de l'écran.
+- Cliquez sur le bouton "Create Workspace".
+- Remplissez les détails :
+    - **Name :** Demo Workspace
+    - **Summary :** Workspace de démonstration pour le TP
+    - **Visibility :** Sélectionnez Team
+### Enregistrer le Workspace :
+- Cliquez sur "Create Workspace" pour finaliser la création.
 
-### Exécution des tests
-Lorsque vous exécutez votre requête Postman, le script de pré-requête vérifiera la présence et la valeur du header my-header avant d'envoyer la requête. Si le header est absent ou incorrect, une erreur sera générée et la requête ne sera pas envoyée. Si le header est correct, la requête sera envoyée, et les tests vérifieront la réponse pour s'assurer que le header attendu est présent et que le statut de la réponse est 200.
+### Invitation du collaborateur:
+- Dans le **Demo Workspace**, cliquez sur le bouton "Invite".
+- Entrez l'adresse e-mail **guest@xyz.com**.
+- Sélectionnez le rôle **Viewer**.
+- Cliquez sur **Invite**.
+- 
+### Notification par e-mail :
+- Vérifiez que le collaborateur reçoit une notification d'invitation par e-mail et l'accepte.
 
- 
+### Gestion des autorisations
+
+**Modification des rôles (par l'administrateur) :**
+
+- Allez dans le ***Demo Workspace.***
+- Cliquez sur "Manage Roles" (Gérer les rôles).
+- Changez le rôle de ***guest@xyz.com*** de ***Viewer** à ***Editor***.
+- Confirmez la modification.
+
+### Exploration des niveaux de visibilité
+
+- Exploration des permissions (par le collaborateur) :
+  - Connectez-vous à Postman avec le compte guest@xyz.com.
+  - Accédez au Demo Workspace.
+  - Essayez de créer une nouvelle collection et d'ajouter des requêtes.
+  
+- Vérification des permissions :
+  - Notez que guest@xyz.com peut créer et modifier des collections et des requêtes, mais ne peut pas gérer les membres du Workspace.
+
+### Résultats attendus
+- Les étudiants comprendront comment créer un Workspace et inviter des collaborateurs.
+- Ils sauront attribuer et modifier des rôles au sein d'un Workspace.
+- Ils découvriront les différences entre les rôles Admin, Editor, et Viewer.
+- Ils seront capables de gérer les autorisations et les niveaux de visibilité dans Postman.
