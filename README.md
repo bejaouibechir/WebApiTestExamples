@@ -18,41 +18,50 @@ namespace WebApiKey
     using Microsoft.Extensions.Logging;
     using System.Threading.Tasks;
 
-    public class ApiKeyMiddleware
-    {
-        private readonly RequestDelegate _next;
-        private readonly ILogger<ApiKeyMiddleware> _logger;
-        private readonly IConfiguration _config;
-        private const string APIKEYNAME = "X-API-Key"; // Nom de l'en-tête API Key
+     public class ApiKeyMiddleware
+ {
+     private readonly RequestDelegate _next;
+     private readonly ILogger<ApiKeyMiddleware> _logger;
+     private readonly IConfiguration _config;
+     private const string APIKEYNAME = "X-API-KEY"; // Nom de l'en-tête API KEY
+     private const string APISECRET = "X-API-SECRET"; //Nom de l'entête APP SECRET 
 
-        public ApiKeyMiddleware(RequestDelegate next, ILogger<ApiKeyMiddleware> logger, IConfiguration config)
-        {
-            _next = next;
-            _logger = logger;
-            _config = config;
-        }
+ public ApiKeyMiddleware(RequestDelegate next, ILogger<ApiKeyMiddleware> logger, IConfiguration config)
+     {
+         _next = next;
+         _logger = logger;
+         _config = config;
+     }
 
-        public async Task Invoke(HttpContext context)
-        {
-            if (!context.Request.Headers.TryGetValue(APIKEYNAME, out var extractedApiKey))
-            {
-                context.Response.StatusCode = 401; // Unauthorized
-                await context.Response.WriteAsync("API Key was not provided.");
-                return;
-            }
+     public async Task Invoke(HttpContext context)
+     {
+         if (!context.Request.Headers.TryGetValue(APIKEYNAME, out var extractedApiKey))
+         {
+             context.Response.StatusCode = 401; // Unauthorized
+             await context.Response.WriteAsync("API Key was not provided.");
+             return;
+         }
 
-            var apiKey = _config.GetValue<string>("ApiConfiguration:ApiKey"); // Récupération de la clé API depuis la configuration
+         if (!context.Request.Headers.TryGetValue(APISECRET, out var extractedAppSecret))
+         {
+             context.Response.StatusCode = 401; // Unauthorized
+             await context.Response.WriteAsync("API SECRET not provided.");
+             return;
+         }
 
-            if (!apiKey.Equals(extractedApiKey))
-            {
-                context.Response.StatusCode = 401; // Unauthorized
-                await context.Response.WriteAsync("Unauthorized client.");
-                return;
-            }
+         var apiKey = _config.GetValue<string>("ApiConfiguration:ApiKey"); // Récupération de la clé API depuis la configuration
+         var appsecret = _config.GetValue<string>("ApiConfiguration:AppSecret"); //Recuperation de Application Secret
 
-            await _next(context);
-        }
-    }
+         if (!apiKey.Equals(extractedApiKey) || !appsecret.Equals(extractedAppSecret))
+         {
+             context.Response.StatusCode = 401; // Unauthorized
+             await context.Response.WriteAsync("Client non authorisé.");
+             return;
+         }
+
+         await _next(context);
+     }
+ }
 }
 
 ```
@@ -84,8 +93,7 @@ namespace WebApiKey
 
 
             app.UseMiddleware<ApiKeyMiddleware>();
-            // Configure the HTTP request pipeline.
-
+            
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
@@ -107,9 +115,18 @@ Assurez-vous que votre fichier ***appsettings.json*** est correctement configur�
 
 {
   "ApiConfiguration": {
-    "ApiKey": "1234567890abcdef"
-  }
+    "ApiKey": "1234567890abcdef",
+    "AppSecret": "mMzvY15g2pMdxVsvTpyCY5LdSAcPSTDKvCS/M09qUTnij2YfXvrX7virtL66FhSZ"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
 }
+
 ```
 
 ***Ajout du contrôleur de test***:
