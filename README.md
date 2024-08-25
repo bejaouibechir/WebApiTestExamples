@@ -81,6 +81,28 @@ Et puis la classe ***DigestAuthenticationMiddleware***
 
 Cette classe intercepte les requêtes pour vérifier les utilisateurs est ce qu'il font partie des utilisateurs authentifiés ou pas
 
+``` mermaid
+classDiagram
+    class DigestAuthenticationMiddleware {
+  
+        +DigestAuthenticationMiddleware(RequestDelegate next)
+        +Task InvokeAsync(HttpContext context)
+        -Task Challenge(HttpContext context)
+        -string GenerateNonce()
+        -IDictionary~string, string~ ParseDigestHeader(string authHeader)
+        -bool IsValidDigest(IDictionary~string, string~ digestValues, HttpContext context)
+        -string CalculateMD5Hash(string input)
+    }
+```
+
+**Méthodes :**
+- **InvokeAsync(HttpContext context)** : Méthode principale qui intercepte les requêtes et applique l'authentification Digest.
+- ***Challenge(HttpContext context)*** : Méthode qui envoie un défi d'authentification Digest au client.
+- ***GenerateNonce()*** : Génère un nonce (nombre aléatoire) utilisé dans le défi d'authentification.
+- ***ParseDigestHeader(string authHeader)*** : Analyse l'en-tête Digest envoyé par le client.
+- ***IsValidDigest(IDictionary<string, string> digestValues, HttpContext context)***: Valide le digest envoyé par le client contre celui calculé par le serveur.
+- ***CalculateMD5Hash(string input)*** : Calcule le hachage MD5 d'une chaîne de caractères.
+
 ```CSharp 
 public class DigestAuthenticationMiddleware
 {
@@ -94,6 +116,14 @@ public class DigestAuthenticationMiddleware
         _next = next;
         _users = users.Value;
         _logger = logger;
+
+       //Faisons si comme si nous avons extrait ces données de la base de données 
+        _users = new List<User>()
+        {
+            new User{ Username="user1", Password="password1"},
+            new User{ Username="user2", Password="password2"},
+        };
+
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -247,6 +277,42 @@ public class DigestAuthenticationMiddleware
 }
 
 ```
+
+En suite injectez le Middleware dans la pipeline (Program.cs)
+
+``` C Sharp
+
+  var builder = WebApplication.CreateBuilder(args);
+
+  // Add services to the container.
+
+  builder.Services.AddControllers();
+  // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+  builder.Services.AddEndpointsApiExplorer();
+  builder.Services.AddSwaggerGen();
+
+  var app = builder.Build();
+
+  // Configure the HTTP request pipeline.
+  if (app.Environment.IsDevelopment())
+  {
+      app.UseSwagger();
+      app.UseSwaggerUI();
+  }
+
+  app.UseMiddleware<DigestAuthenticationMiddleware>();
+
+  app.UseHttpsRedirection();
+
+  app.UseAuthorization();
+
+
+  app.MapControllers();
+
+  app.Run();
+
+```
+
 - Tester le code avec un contrôleur ***TestController***
 
 ``` CSharp
