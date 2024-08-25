@@ -7,6 +7,60 @@
   
 - L’authentification Digest fonctionne bien sur Internet, ce qui la rend plus appropriée que l’authentification Windows1.
 
+  ### Mécanisme d'Authentification Digest : Éléments, Rôles et Exemples
+
+- **Realm** (Obligatoire)
+  - **Rôle** : Identifie l'espace de protection auquel l'utilisateur essaie d'accéder.
+  - **Exemple de valeur** : `"testrealm@example.com"`
+  - **Explication** : Indique que l'utilisateur doit s'authentifier pour accéder aux ressources du domaine `example.com`.
+
+- **Nonce** (Obligatoire)
+  - **Rôle** : Valeur unique générée par le serveur pour chaque demande, utilisée pour prévenir les attaques par rejeu.
+  - **Exemple de valeur** : `"dcd98b7102dd2f0e8b11d0f600bfb0c093"`
+  - **Explication** : Cette valeur unique garantit que chaque demande d'authentification est unique.
+
+- **Algorithm** (Obligatoire)
+  - **Rôle** : Méthode de hachage utilisée pour sécuriser le mot de passe.
+  - **Exemple de valeur** : `"MD5"`
+  - **Explication** : Définit l'algorithme de hachage utilisé pour sécuriser les informations, ici `MD5`.
+
+- **qop** (Optionnel)
+  - **Rôle** : Spécifie le type de protection utilisé (par exemple, authentification seule ou authentification avec intégrité).
+  - **Exemple de valeur** : `"auth-int"`
+  - **Explication** : Indique que l'intégrité des messages est vérifiée en plus de l'authentification (`auth-int`).
+
+- **Nonce Count** (Optionnel)
+  - **Rôle** : Compteur des nonces utilisés par le client dans les requêtes successives.
+  - **Exemple de valeur** : `"00000001"`
+  - **Explication** : Ce compteur indique que c'est la première utilisation de ce nonce.
+
+- **Client Nonce** (Optionnel)
+  - **Rôle** : Valeur unique générée par le client pour améliorer la sécurité contre les attaques par rejeu.
+  - **Exemple de valeur** : `"0a4f113b"`
+  - **Explication** : Ce nonce est utilisé par le client pour ajouter une couche supplémentaire de sécurité.
+
+- **Opaque** (Optionnel)
+  - **Rôle** : Valeur opaque renvoyée par le serveur et retournée par le client pour maintenir l'état entre les requêtes.
+  - **Exemple de valeur** : `"5ccc069c403ebaf9f0171e9517f40e41"`
+  - **Explication** : Cette valeur est renvoyée par le serveur pour s'assurer que la même session est utilisée entre le client et le serveur.
+
+
+### Diagramme de Séquence 
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Server
+
+    Client->>Server: Demande d'accès
+    Server-->>Client: Envoie `realm`="testrealm@example.com", `nonce`="dcd98b7102dd2f0e8b11d0f600bfb0c093", `opaque`="5ccc069c403ebaf9f0171e9517f40e41"
+    Client->>Client: Calcule la réponse avec `algorithm`="MD5", `nonce`, `realm`, etc.
+    Client->>Server: Retourne la réponse avec `qop`="auth-int", `nonceCount`="00000001", `clientNonce`="0a4f113b"
+    Server-->>Client: Accès accordé ou refusé
+```
+
+Ces exemples montrent comment les éléments du mécanisme d'authentification Digest sont utilisés pour sécuriser les échanges entre le client et le serveur, en protégeant contre les attaques par rejeu et en maintenant la cohérence de la session d'authentification.
+
 ## Création du serveur web api 
 
 - Ouvrez Visual Studio ou votre éditeur de code préféré.
@@ -16,7 +70,7 @@
 Ajouter la classe ***User*** 
 
 ```CSharp 
-public class 
+public class User
 {
     public string Username { get; set; }
     public string Password { get; set; }
@@ -24,7 +78,9 @@ public class
 
 ```
 Et puis la classe ***DigestAuthenticationMiddleware***
+
 Cette classe intercepte les requêtes pour vérifier les utilisateurs est ce qu'il font partie des utilisateurs authentifiés ou pas
+
 ```CSharp 
 public class DigestAuthenticationMiddleware
 {
